@@ -1,0 +1,168 @@
+#include <LiquidCrystal.h>
+#include <dht11.h>      
+#include  <pitches.h>  
+#include "makers_vars.h"     
+#include "makers_func.h"                                
+#define DHT11PIN 6                                
+
+//dht11 DHT11;
+//LiquidCrystal lcd(44, 45, 46, 47, 48, 49);
+
+
+/*핀 정리-------------------
+온습도 핀 = 6번
+미세먼지 LED핀 2번, OUT핀 A0
+스피커핀 10번
+가변저항핀 A2
+------------------------*/
+                           
+//
+////함수 프로토타입 선언--
+//float print_onsepdo();
+//float print_dust();
+//void music();
+//void test_code();
+//void over19();
+//void sepdo_LCD();
+////---------------------------------------------------------------
+//
+////전역변수 선언-------
+//int vR = A2;       //희망습도 조절용 가변저항 다이얼
+//int speakerPin = 10;
+//int measurePin = A0;
+//int ledPower = 8;  
+//
+//int samplingTime = 280;
+//int deltaTime = 40;
+//int sleepTime = 9680;
+//float voMeasured = 0;
+//float calcVoltage = 0;
+//
+//float temperature; //현재 기온.
+//
+////-----------------------------------------------------------------
+
+
+void setup()
+{
+  Serial1.begin(38400);
+  Serial.begin(38400); 
+  
+  pinMode(ledPower, OUTPUT);
+  pinMode(vR, INPUT);
+
+  lcd.begin(16, 2); // LCD 초기화
+}
+
+
+
+void loop() // main_loop           @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+{ 
+  float dustDensity = print_dust(); //미세먼지 농도
+  
+  float now_hum = print_onsepdo(); // 현재습도 
+  
+  over19();
+
+  sepdo_LCD(now_hum, dustDensity);
+
+  delay(3000);
+}
+
+//
+//float print_onsepdo()                  //온습도 출력함수
+//{
+//  float now_hum = (float)DHT11.humidity;
+//  temperature = (float)DHT11.temperature;
+//  Serial.println("----온습도----");
+//  int chk = DHT11.read(DHT11PIN);                    // DHT11PIN에서 받은 값을 chk에 저장합니다.
+//  Serial.print("Humidity (%): ");                   // 'Humidity (%): '를 시리얼 통신으로 출력합니다.
+//  Serial.println(now_hum, 2);         // DHT11.humidity 값을 소수점 2자리수까지 출력하고 줄을 바꿉니다.
+//  Serial.print("Temperature (oC): ");               // 'Temperature (oC): '를 시리얼 통신으로 출력합니다.
+//  Serial.println(temperature, 2);      // DHT11.temperature 값을 소수점 2자리수까지 출력하고 줄을 바꿉니다.
+//  Serial.println("\n"); 
+//
+//  return now_hum;
+//}
+//
+//float print_dust(){                     //미세먼지 출력함수
+//  float dustDensity;
+//  Serial.println("----미세먼지 농도----");
+//  digitalWrite(ledPower,LOW);
+//  delayMicroseconds(samplingTime);
+//  voMeasured = analogRead(measurePin); 
+//
+//  delayMicroseconds(deltaTime);
+//  digitalWrite(ledPower,HIGH); 
+//  delayMicroseconds(sleepTime);
+//
+//  calcVoltage = voMeasured * (5.0 / 1024.0);
+//  dustDensity = 17 * calcVoltage - 0.1;
+//  
+//  if(dustDensity<16) Serial.println("GOOD"); 
+//  else if(dustDensity>=16 && dustDensity<36) Serial.println("NORMAL");   
+//  else if(dustDensity>=36 && dustDensity<76) Serial.println("BAD"); 
+//  else if(dustDensity>76) Serial.println("WORST"); 
+//
+//  return dustDensity;
+//}
+//
+//void test_code(){                      // M-S 간 블루투스 통신 정상여부 확인용 테스트 코드.
+//  if(Serial1.available()) Serial.write(Serial1.read());
+//  
+//  if (Serial.available()) Serial1.write(Serial.read());
+//}
+//
+//void over19(){                          //남은 물이 부족하면 경고음악 출력하는 코드.
+//  if(Serial1.available()){
+//    char R = Serial1.read();
+//    if(R == '1') music();
+//}
+//}
+//
+//void music(){                     //쇼미더머니10 노래 '쉬어' 훅파트 플레이 코드.
+//  int melody[] = {
+//  NOTE_C5, NOTE_C5, NOTE_C5, 0, NOTE_E5, 0, NOTE_A4, NOTE_E5, NOTE_D5, 0,
+//  NOTE_B4, NOTE_B4, 0, NOTE_A4, 0, 0, 0, 0};
+//  
+//  int noteDuration = 6; //6분음표 박자
+//  
+//for (int thisNote = 0; thisNote < sizeof(melody) / sizeof(int); thisNote++) {
+//    // 음표 길이를 시간으로 변환
+//    int noteLength = 1000 / noteDuration;
+//    // 단음 재생
+//    tone(speakerPin, melody[thisNote], noteLength);
+//    delay(noteLength);
+//    noTone(speakerPin); // 현재 음 재생 중지
+//  }
+//}
+//
+////보건복지부 및 질병관리본부 피셜 적정 습도는 대게 40-70이 적정.
+//
+//void sepdo_LCD(float now_hum, float dustDensity){ //희망습도, 추천습도, 적정습도 값 얻어내어 LCD에 출력하는 함수.
+//  lcd.clear();
+//  int vR_read = analogRead(vR); //가변저항으로 원하는 습도를 다이얼 돌리듯이 조절.
+//  float want_hum, recm_hum; 
+//
+//  want_hum = map(vR_read, 0, 1023, 0, 100);
+//  recm_hum = 55;
+//  
+//  if(temperature <= 20) recm_hum += 5;
+//  else recm_hum -= 5;
+//
+//  //하단은 LCD 출력 코드
+//  String temp = String(now_hum);
+//  lcd.setCursor(0,0);
+//  lcd.write("NH:");
+//  lcd.print(now_hum,1);
+//  lcd.setCursor(8,0);
+//  lcd.write("WH:");
+//  lcd.print(want_hum,1);
+//
+//  lcd.setCursor(0,1);
+//  lcd.write("RH:");
+//  lcd.print(recm_hum,1);
+//  lcd.setCursor(8,1);
+//  lcd.write("DS:");
+//  lcd.print(dustDensity);
+//}
